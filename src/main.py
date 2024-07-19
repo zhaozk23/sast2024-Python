@@ -1,52 +1,15 @@
 import json
 import sys
+import streamlit as st
 
 
 def load_data(filepath):
-    students_dict = {}
+    data_dict = {}
     with open(filepath, 'r', encoding='utf-8') as f:
         for line in f:
-            student = json.loads(line)
-            students_dict[student['id']] = student
-    return students_dict
-
-
-def select_course(student, courses):
-    while True:
-        search_key = input("Do you want to search by name/course id/teacher?\n")
-        print("Type 'quit' to quit")
-        found = False
-        if search_key == 'name':
-            name = input("Name of course: ")
-            for c in courses.values():
-                if c.get('name') == name:
-                    student['selected'].append(c['id'])
-                    found = True
-        elif search_key == 'course id':
-            course_id = input("Course ID: ")
-            for c in courses.values():
-                if c.get('id') == course_id:
-                    student['selected'].append(c['id'])
-                    found = True
-        elif search_key == 'teacher':
-            teacher = input("Teacher: ")
-            for c in courses.values():
-                if c.get('teacher') == teacher:
-                    student['selected'].append(c['id'])
-                    found = True
-        elif search_key == 'quit':
-            break
-        else:
-            print("Invalid input")
-        if found:
-            print(f"Course with given {search_key} is selected.")
-        else:
-            print(f"Course with given {search_key} does not exist.")
-
-
-def view_selected_courses(student):
-    # 查看已选课程
-    print(f"Student {student['name']} has selected:\n {student['selected']}")
+            data = json.loads(line)
+            data_dict[data['id']] = data
+    return data_dict
 
 
 def save_data(filepath, data):
@@ -56,39 +19,45 @@ def save_data(filepath, data):
             f.write(json.dumps(student) + '\n')
 
 
-def print_menu():
-    print("\n选课系统菜单：")
-    print("1. 选课")
-    print("2. 查看已选课程")
-    print("3. 退出")
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+if 'student_id' not in st.session_state:
+    st.session_state['student_id'] = None
+if 'student_info' not in st.session_state:
+    st.session_state['student_info'] = {}
+if 'course_info' not in st.session_state:
+    st.session_state['course_info'] = {}
+
+
+def login():
+    st.header('登录页')
+    st.session_state['student_id'] = st.text_input(label="输入学号", help="如：001")
+    if st.button('登录'):
+        st.session_state['logged_in'] = True
+        st.success("登录成功")
+        st.rerun()
+
+
+def logout():
+    st.session_state['logged_in'] = False
+    st.session_state['student_id'] = None
+    st.rerun()
+
+
+logout_page = st.Page(logout, title="退出")
+choose_course_page = st.Page("choose_course.py", title="选择课程")
+view_courses_page = st.Page("view_courses.py", title="查看已选课程")
 
 
 def main(student_file, courses_file):
-    students = load_data(student_file)
-    courses = load_data(courses_file)
-
-    while True:
-        print_menu()
-        choice = input("请选择一个操作（1-3）：")
-
-        if choice == '1':
-            # 示例：选课操作
-            # select_course(students['some_student_id'], courses)
-            student_id = input("Please input your student id:")
-            select_course(students[student_id], courses)
-        elif choice == '2':
-            # 示例：查看已选课程
-            # view_selected_courses(students['some_student_id'])
-            student_id = input("Please input your student id:")
-            view_selected_courses(students[student_id])
-        elif choice == '3':
-            print("退出系统。")
-            break
-        else:
-            print("无效的输入，请重新选择。")
-
-    # 保存学生数据
-    save_data(student_file, students)
+    st.session_state['student_info'] = load_data(student_file)
+    st.session_state['course_info'] = load_data(courses_file)
+    st.title('选课系统')
+    if not st.session_state['logged_in']:
+        pg = st.navigation([st.Page(login)])
+    else:
+        pg = st.navigation([choose_course_page, view_courses_page, logout_page])
+    pg.run()
 
 
 if __name__ == "__main__":

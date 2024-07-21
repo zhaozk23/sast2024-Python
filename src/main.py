@@ -36,6 +36,8 @@ if 'searched' not in st.session_state:
     st.session_state['searched'] = False
 if 'student_path' not in st.session_state:
     st.session_state['student_path'] = ""
+if 'week' not in st.session_state:
+    st.session_state['week'] = {"Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4, "Sat": 5, "Sun": 6}
 
 
 def login():
